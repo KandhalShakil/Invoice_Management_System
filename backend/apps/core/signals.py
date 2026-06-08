@@ -41,10 +41,10 @@ def send_sync_event(model_name, action, instance):
                 from apps.products.serializers import ProductSerializer
                 payload_data = ProductSerializer(instance).data
             elif model_name == 'invoice':
-                from apps.invoices.serializers import InvoiceListSerializer, InvoiceSerializer
+                from apps.invoices.serializers import InvoiceSerializer
                 try:
                     payload_data = InvoiceSerializer(instance).data
-                except:
+                except Exception:
                     payload_data = None
         except Exception as e:
             logger.error(f"Failed to serialize payload for {model_name}: {e}")

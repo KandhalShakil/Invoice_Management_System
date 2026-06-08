@@ -104,7 +104,7 @@ POSTGRES_USER = os.getenv('POSTGRES_USER')
 POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
 POSTGRES_HOST = os.getenv('POSTGRES_HOST')
 POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
-POSTGRES_SSLMODE = os.getenv('POSTGRES_SSLMODE', 'require')
+POSTGRES_SSLMODE = os.getenv('POSTGRES_SSLMODE', 'prefer')
 
 import sys
 IS_TESTING = 'test' in sys.argv or any('pytest' in arg for arg in sys.argv) or 'pytest' in sys.modules
