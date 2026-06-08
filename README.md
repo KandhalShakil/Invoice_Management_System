@@ -1,7 +1,7 @@
 # Invoicely - Invoice Management System
 
 <p align="center">
-  <img src="./assets/banner.svg" alt="Invoicely Hero Banner" width="800" />
+  <img src="./assets/banner.svg" alt="Invoicely Hero Banner" width="1100" />
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## ✨ Table of Contents
@@ -39,7 +39,7 @@
 </details>
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 🚀 Project Overview
@@ -56,7 +56,7 @@ Modern financial systems suffer from data drift, out-of-catalog invoice edits, l
 <br clear="right"/>
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 🛠️ Key Architecture Enhancements
@@ -68,7 +68,7 @@ This project has been hardened with production-grade enterprise practices:
 - 🛡️ **Resilient Fallback Middleware**: If a local development environment lacks Redis or Celery, the system dynamically switches to SQLite, in-memory local caches, and synchronous task execution.
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 🔥 Core Feature Showcase
@@ -83,7 +83,7 @@ This project has been hardened with production-grade enterprise practices:
 | 🕵️ **Auditing Trails** | Session Logging | Thread-safe `ContextVar` logs all user modifications (IP, agent, timestamp) inside `audit_logs` schemas. |
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 💻 Technology Stack
@@ -118,7 +118,7 @@ This project has been hardened with production-grade enterprise practices:
 </div>
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 📊 System Architecture
@@ -257,7 +257,7 @@ erDiagram
 </details>
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 📡 Real-Time WebSocket Sync
@@ -271,7 +271,7 @@ Invoicely implements a production-ready WebSockets system using Django Channels 
 4. **Optimistic Refetches:** Dashboard cards, KPI statistics, client listings, and invoice registers listen to `app:sync` and trigger background fetches immediately.
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## ⚡ Performance Optimizations
@@ -283,7 +283,7 @@ To handle heavy SaaS loads, several database and caching optimizations were perf
 - ⏱️ **Client Debouncing**: Frontend implements a 300ms debounce buffer on search forms to prevent keystroke database query spam.
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 📥 Installation & Setup
@@ -381,7 +381,7 @@ docker-compose up --build -d
 ```
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 🔌 API Documentation
@@ -486,7 +486,7 @@ docker-compose up --build -d
 - **Response:** 200 OK with updated invoice instance details.
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 📁 Folder Structure
@@ -526,7 +526,7 @@ frontend/
 ```
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 🛡️ Security Architecture
@@ -543,7 +543,7 @@ frontend/
 - 🧹 **Sensitive Inputs Scrubbing:** Strict character filtering processes and sanitizes phone numbers, stripping characters, prefixes (`+91`), or spacing drift.
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 🗺️ Project Roadmap
@@ -558,7 +558,7 @@ frontend/
 - [ ] Offline payment sync adapters
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 🤝 Contributing Guide
@@ -571,7 +571,7 @@ frontend/
 6. Open a Pull Request.
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 📄 License
@@ -579,7 +579,7 @@ frontend/
 Distributed under the MIT License. See `LICENSE` for more information.
 
 <p align="center">
-  <img src="assets/separator.svg" alt="Separator" width="800" />
+  <img src="assets/separator.svg" alt="Separator" width="1100" />
 </p>
 
 ## 👥 Authors
