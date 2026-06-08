@@ -54,7 +54,7 @@ const Settings: React.FC = () => {
 
   // Pending member management states
   const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
-  const [pendingMembersLoading, setPendingMembersLoading] = useState(false);
+  const [, setPendingMembersLoading] = useState(false);
   const [resolvingMemberId, setResolvingMemberId] = useState<string | null>(null);
   const [resolveMessage, setResolveMessage] = useState('');
 

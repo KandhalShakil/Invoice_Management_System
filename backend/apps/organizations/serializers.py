@@ -57,8 +57,9 @@ class AddMemberSerializer(serializers.Serializer):
         )
         
         if not created:
-            # Update role if already exists
+            # Update role and ensure they are approved if they were previously rejected
             membership.role = role
-            membership.save(update_fields=['role'])
+            membership.approval_status = 'approved'
+            membership.save(update_fields=['role', 'approval_status'])
             
         return membership

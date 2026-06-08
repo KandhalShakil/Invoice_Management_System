@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import useSWR, { mutate as globalMutate } from 'swr';
+import { fetcher } from '../utils/fetcher';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Plus, Edit2, Trash2, Box, Package, Check, X } from 'lucide-react';
@@ -6,25 +8,27 @@ import { Product } from '../types';
 
 const Products: React.FC = () => {
   const { activeOrg, activeRole } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cacheKey = activeOrg ? '/products/' : null;
+  const { data: fetchResult, error: swrError, mutate: boundMutate } = useSWR(cacheKey, fetcher);
   
-  // Form Modal Controls
+  const products: Product[] = fetchResult?.results || fetchResult || [];
+  const isLoading = !fetchResult && !swrError;
+
+  useEffect(() => {
+    const handleSync = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) return;
+      
+      if (detail.model === 'product') {
+        globalMutate(key => typeof key === 'string' && key.startsWith('/products/'));
+      }
+    };
+    window.addEventListener('app:sync', handleSync);
+    return () => window.removeEventListener('app:sync', handleSync);
+  }, []);
+
   const [isOpen, setIsOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  
-  // Input states
-  const [name, setName] = useState('');
-  const [sku, setSku] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [taxRate, setTaxRate] = useState('18.00'); // Default Indian GST standard
-  const [hsnSacCode, setHsnSacCode] = useState('');
-  const [type, setType] = useState<'product' | 'service'>('product');
-  const [inventoryCount, setInventoryCount] = useState('0');
-  
-  const [error, setError] = useState('');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -33,33 +37,16 @@ const Products: React.FC = () => {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const fetchProducts = async () => {
-    if (!activeOrg) return;
-    try {
-      setIsLoading(true);
-      const res = await api.get('/products/');
-      setProducts(res.data.results || res.data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, [activeOrg]);
-
-  useEffect(() => {
-    const handleSync = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail && ['product', 'invoice'].includes(detail.model)) {
-        fetchProducts();
-      }
-    };
-    window.addEventListener('app:sync', handleSync);
-    return () => window.removeEventListener('app:sync', handleSync);
-  }, [activeOrg]);
+  const [name, setName] = useState('');
+  const [sku, setSku] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [taxRate, setTaxRate] = useState('18.00');
+  const [hsnSacCode, setHsnSacCode] = useState('');
+  const [type, setType] = useState<'product' | 'service'>('product');
+  const [inventoryCount, setInventoryCount] = useState('0');
+  const [error, setError] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const resetForm = () => {
     setEditId(null);
@@ -123,40 +110,61 @@ const Products: React.FC = () => {
     };
 
     setIsSubmitting(true);
-    try {
-      if (editId) {
-        await api.put(`/products/${editId}/`, payload);
+    setIsOpen(false); // Optimistic close
+
+    if (editId) {
+      const optimisticProducts = products.map(p => p.id === editId ? { ...p, ...payload } : p);
+      const optimisticResult = fetchResult?.results ? { ...fetchResult, results: optimisticProducts } : optimisticProducts;
+      
+      try {
+        await boundMutate(
+          api.put(`/products/${editId}/`, payload).then(() => fetcher(cacheKey as string)),
+          { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
+        );
         showToast('Item updated successfully.', 'success');
-      } else {
-        await api.post('/products/', payload);
+        resetForm();
+      } catch (err: any) {
+        setIsOpen(true);
+        handleError(err);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      const tempId = `temp_${Date.now()}`;
+      const tempProd = { id: tempId, ...payload, organization_id: activeOrg };
+      const optimisticProducts = [tempProd, ...products];
+      const optimisticResult = fetchResult?.results ? { ...fetchResult, results: optimisticProducts } : optimisticProducts;
+
+      try {
+        await boundMutate(
+          api.post('/products/', payload).then(() => fetcher(cacheKey as string)),
+          { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
+        );
         showToast('Item created successfully.', 'success');
+        resetForm();
+      } catch (err: any) {
+        setIsOpen(true);
+        handleError(err);
+      } finally {
+        setIsSubmitting(false);
       }
-      setIsOpen(false);
-      resetForm();
-      fetchProducts();
-    } catch (err: any) {
-      if (err.response && err.response.status === 400 && typeof err.response.data === 'object') {
-        const data = err.response.data;
-        const fieldErrors: Record<string, string> = {};
-        Object.keys(data).forEach((key) => {
-          const val = data[key];
-          fieldErrors[key] = Array.isArray(val) ? val[0] : val;
-        });
-        setFormErrors(fieldErrors);
+    }
+  };
 
-        // Autofocus first invalid field
-        const firstInvalidKey = Object.keys(fieldErrors)[0];
-        const el = document.getElementById(`prod_${firstInvalidKey}`);
-        if (el) el.focus();
-
-        showToast('Please correct the highlighted errors.', 'error');
-      } else {
-        const msg = err.response?.data?.error || 'Failed to submit catalog item.';
-        setError(msg);
-        showToast(msg, 'error');
-      }
-    } finally {
-      setIsSubmitting(false);
+  const handleError = (err: any) => {
+    if (err.response && err.response.status === 400 && typeof err.response.data === 'object') {
+      const data = err.response.data;
+      const fieldErrors: Record<string, string> = {};
+      Object.keys(data).forEach((key) => {
+        const val = data[key];
+        fieldErrors[key] = Array.isArray(val) ? val[0] : val;
+      });
+      setFormErrors(fieldErrors);
+      showToast('Please correct the highlighted errors. Changes rolled back.', 'error');
+    } else {
+      const msg = err.response?.data?.error || 'Unable to save changes. Changes have been reverted.';
+      setError(msg);
+      showToast(msg, 'error');
     }
   };
 
@@ -164,8 +172,13 @@ const Products: React.FC = () => {
     if (!window.confirm("Are you sure you want to delete this catalog item?")) return;
     setIsSubmitting(true);
     try {
-      await api.delete(`/products/${id}/`);
-      fetchProducts();
+      const optimisticProducts = products.filter(p => p.id !== id);
+      const optimisticResult = fetchResult?.results ? { ...fetchResult, results: optimisticProducts } : optimisticProducts;
+
+      await boundMutate(
+        api.delete(`/products/${id}/`).then(() => fetcher(cacheKey as string)),
+        { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
+      );
       showToast('Catalog item deleted successfully!', 'success');
     } catch (e: any) {
       const msg = e.response?.data?.error || e.response?.data?.detail || "Failed to delete product. It may be referenced in line items.";

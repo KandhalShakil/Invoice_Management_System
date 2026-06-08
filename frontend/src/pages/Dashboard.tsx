@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import api from '../services/api';
+import React, { useEffect } from 'react';
+import useSWR, { mutate as globalMutate } from 'swr';
+import { fetcher } from '../utils/fetcher';
 import { useAuth } from '../context/AuthContext';
 import { ChartsPanel } from '../components/ChartsPanel';
 import NotificationCenter from '../components/NotificationCenter';
 import { 
-  TrendingUp, Clock, AlertTriangle, FileSpreadsheet, Plus, ArrowRight, ExternalLink
+  TrendingUp, Clock, AlertTriangle, FileSpreadsheet, Plus, ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Invoice } from '../types';
@@ -12,53 +13,37 @@ import { Invoice } from '../types';
 const Dashboard: React.FC = () => {
   const { activeOrg } = useAuth();
   
-  const [kpis, setKpis] = useState<any>({
+  const dashboardCacheKey = activeOrg ? '/invoices/dashboard/' : null;
+  const { data: dashboardData, error: dashboardError } = useSWR(dashboardCacheKey, fetcher);
+
+  const invoicesCacheKey = activeOrg ? '/invoices/?limit=5' : null;
+  const { data: invoicesData, error: invoicesError } = useSWR(invoicesCacheKey, fetcher);
+
+  const kpis = dashboardData?.kpis || {
     total_revenue: 0,
     monthly_revenue: 0,
     pending_revenue: 0,
     overdue_revenue: 0,
     customer_count: 0
-  });
-  
-  const [revenueTrend, setRevenueTrend] = useState([]);
-  const [taxSummary, setTaxSummary] = useState([]);
-  const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchDashboardData = async () => {
-    if (!activeOrg) return;
-    try {
-      setIsLoading(true);
-      const [statsRes, invoicesRes] = await Promise.all([
-        api.get('/invoices/dashboard/'),
-        api.get('/invoices/?limit=5')
-      ]);
-      
-      setKpis(statsRes.data.kpis);
-      setRevenueTrend(statsRes.data.revenue_trend);
-      setTaxSummary(statsRes.data.tax_summary);
-      setRecentInvoices((invoicesRes.data.results || invoicesRes.data).slice(0, 5));
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
   };
+  const revenueTrend = dashboardData?.revenue_trend || [];
+  const taxSummary = dashboardData?.tax_summary || [];
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [activeOrg]);
+  const recentInvoices: Invoice[] = (invoicesData?.results || invoicesData || []).slice(0, 5);
+
+  const isLoading = (!dashboardData && !dashboardError) || (!invoicesData && !invoicesError);
 
   useEffect(() => {
     const handleSync = (e: Event) => {
       const detail = (e as CustomEvent).detail;
+      if (!detail) return;
       if (['invoice', 'customer', 'product', 'organization', 'membership'].includes(detail.model)) {
-        fetchDashboardData();
+        globalMutate(key => typeof key === 'string' && (key.startsWith('/invoices/dashboard/') || key.startsWith('/invoices/')));
       }
     };
     window.addEventListener('app:sync', handleSync);
     return () => window.removeEventListener('app:sync', handleSync);
-  }, [activeOrg]);
+  }, []);
 
   const cards = [
     { name: 'Total Revenue', value: `₹ ${kpis.total_revenue.toLocaleString('en-IN')}`, desc: 'Lifetime earnings', icon: TrendingUp, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },

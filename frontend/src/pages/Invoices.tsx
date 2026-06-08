@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import useSWR, { mutate as globalMutate } from 'swr';
+import { fetcher } from '../utils/fetcher';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -14,18 +16,29 @@ const Invoices: React.FC = () => {
   // Tab controller
   const [activeTab, setActiveTab] = useState<'list' | 'new' | 'ocr' | 'ai'>('list');
   
-  // Invoice list data
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   // Filtering & Search & Pagination
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
   
+  const invoiceCacheKey = activeOrg ? `/invoices/?page=${page}&search=${debouncedSearch}&status=${statusFilter}` : null;
+  const { data: invoicesData, error: invoicesError, mutate: mutateInvoices } = useSWR(invoiceCacheKey, fetcher);
+  
+  const customerCacheKey = activeOrg ? '/customers/?no_pagination=true' : null;
+  const { data: customersData } = useSWR(customerCacheKey, fetcher);
+  
+  const productCacheKey = activeOrg ? '/products/?no_pagination=true' : null;
+  const { data: productsData } = useSWR(productCacheKey, fetcher);
+
+  const invoices: Invoice[] = invoicesData?.results || invoicesData || [];
+  const totalCount = invoicesData?.count || invoices.length;
+  
+  const customers: Customer[] = customersData?.results || customersData || [];
+  const products: Product[] = productsData?.results || productsData || [];
+
+  const isLoading = !invoicesData && !invoicesError;
+
   // Drawer details view
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [transitionComment, setTransitionComment] = useState('');
@@ -66,6 +79,13 @@ const Invoices: React.FC = () => {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Auto-set AI target customer when customers load
+  useEffect(() => {
+    if (customers.length > 0 && !aiTargetCustomer) {
+      setAiTargetCustomer(customers[0].id);
+    }
+  }, [customers]);
+
   // Reset the invoice builder form to pristine state
   const resetForm = () => {
     setCustomer('');
@@ -88,68 +108,27 @@ const Invoices: React.FC = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Fetch customers and products once
-  const fetchCustomersAndProducts = async () => {
-    if (!activeOrg) return;
-    try {
-      const [customersRes, productsRes] = await Promise.all([
-        api.get('/customers/?no_pagination=true'),
-        api.get('/products/?no_pagination=true')
-      ]);
-      console.log("Raw Customers API Response:", customersRes);
-      const customerList: Customer[] = customersRes.data.results || customersRes.data;
-      console.log("Processed Customer List before rendering:", customerList);
-      const productList: Product[] = productsRes.data.results || productsRes.data;
-      setCustomers(customerList);
-      setProducts(productList);
-      
-      if (customerList.length > 0 && !aiTargetCustomer) {
-        setAiTargetCustomer(customerList[0].id);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // Fetch invoices on filter/page/search change
-  const fetchInvoices = async () => {
-    if (!activeOrg) return;
-    try {
-      setIsLoading(true);
-      const res = await api.get(`/invoices/?page=${page}&search=${debouncedSearch}&status=${statusFilter}`);
-      if (res.data.results) {
-        setInvoices(res.data.results);
-        setTotalCount(res.data.count);
-      } else {
-        setInvoices(res.data);
-        setTotalCount(res.data.length);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCustomersAndProducts();
-  }, [activeOrg]);
-
-  useEffect(() => {
-    fetchInvoices();
-  }, [activeOrg, page, debouncedSearch, statusFilter]);
-
   useEffect(() => {
     const handleSync = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (detail && ['invoice', 'customer', 'product'].includes(detail.model)) {
-        fetchInvoices();
-        fetchCustomersAndProducts();
+      if (!detail) return;
+      
+      const { model } = detail;
+      
+      if (model === 'customer') {
+        globalMutate(key => typeof key === 'string' && key.startsWith('/customers/'));
+      } else if (model === 'product') {
+        globalMutate(key => typeof key === 'string' && key.startsWith('/products/'));
+        // Local logic to update line items if a product changes is omitted for brevity,
+        // it can be done through SWR caching natively when building the invoice.
+      } else if (model === 'invoice') {
+        globalMutate(key => typeof key === 'string' && key.startsWith('/invoices/'));
       }
     };
+    
     window.addEventListener('app:sync', handleSync);
     return () => window.removeEventListener('app:sync', handleSync);
-  }, [activeOrg]);
+  }, []);
 
   // Calculations for dynamic invoice preview
   const calculateTotals = () => {
@@ -261,11 +240,28 @@ const Invoices: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await api.post('/invoices/', payload);
-      // Reset form and return
+      const tempId = `temp_${Date.now()}`;
+      const tempInv = {
+        id: tempId,
+        ...payload,
+        invoice_number: 'INV-DRAFT',
+        total_amount: total,
+        subtotal,
+        tax_amount: taxAmount,
+        organization_id: activeOrg,
+        customer_detail: customers.find(c => c.id === customer),
+      };
+      
+      const optimisticInvoices = [tempInv, ...invoices];
+      const optimisticResult = invoicesData?.results ? { ...invoicesData, count: totalCount + 1, results: optimisticInvoices } : optimisticInvoices;
+
+      await mutateInvoices(
+        api.post('/invoices/', payload).then(() => fetcher(invoiceCacheKey as string)),
+        { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
+      );
+
       resetForm();
       setActiveTab('list');
-      fetchInvoices();
       showToast('Invoice generated successfully.', 'success');
     } catch (err: any) {
       if (err.response && err.response.status === 400 && typeof err.response.data === 'object') {
@@ -281,7 +277,7 @@ const Invoices: React.FC = () => {
         const el = document.getElementById(`inv_${firstInvalidKey}`);
         if (el) el.focus();
 
-        showToast('Please correct the highlighted errors.', 'error');
+        showToast('Please correct the highlighted errors. Changes rolled back.', 'error');
       } else {
         const msg = err.response?.data?.non_field_errors?.[0] || err.response?.data?.error || 'Failed to generate invoice.';
         setFormError(msg);
@@ -307,23 +303,38 @@ const Invoices: React.FC = () => {
         }
         payload.amount = parseFloat(paymentAmount);
       }
+
+      // Optimistic transition
+      const updatedInvoice = { ...selectedInvoice };
+      if (action === 'submit') updatedInvoice.status = 'pending';
+      if (action === 'approve') updatedInvoice.status = 'approved';
+      if (action === 'reject') updatedInvoice.status = 'draft';
+      if (action === 'send') updatedInvoice.status = 'sent';
       
-      const res = await api.post(`/invoices/${selectedInvoice.id}/${action}/`, payload);
+      const optimisticInvoices = invoices.map(i => i.id === updatedInvoice.id ? updatedInvoice : i);
+      const optimisticResult = invoicesData?.results ? { ...invoicesData, results: optimisticInvoices } : optimisticInvoices;
+      
+      setSelectedInvoice(updatedInvoice); // Optimistically update drawer
+
+      const res = await mutateInvoices(
+        api.post(`/invoices/${selectedInvoice.id}/${action}/`, payload).then(() => fetcher(invoiceCacheKey as string)),
+        { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
+      );
       
       setTransitionComment('');
       setPaymentAmount('');
       
-      // Update drawer invoice reference and table list
-      if (action === 'send') {
-        // Update the drawer with a local status update for immediate feedback
-        setSelectedInvoice(prev => prev ? { ...prev, status: 'sent' } : null);
-      } else {
-        setSelectedInvoice(res.data);
+      // Keep drawer updated with final result
+      const finalInvoice = (res?.results || res || []).find((i: Invoice) => i.id === selectedInvoice.id);
+      if (finalInvoice) {
+        setSelectedInvoice(finalInvoice);
       }
-      
-      fetchInvoices();
+
       showToast(`Action '${action}' processed successfully!`, 'success');
     } catch (e: any) {
+      // Revert selected invoice drawer
+      setSelectedInvoice(invoices.find(i => i.id === selectedInvoice.id) || null);
+      
       const msg = e.response?.data?.error || e.response?.data?.detail || 'Action failed. Check your permissions.';
       setWorkflowError(msg);
       showToast(msg, 'error');
@@ -693,7 +704,6 @@ const Invoices: React.FC = () => {
                       setIssueDate(val);
                       setFormErrors(prev => ({ ...prev, issue_date: '' }));
                     }}
-                    required
                     className={formErrors.issue_date ? 'border-red-500/80 focus:border-red-500' : ''}
                   />
                   {formErrors.issue_date && (
@@ -708,7 +718,6 @@ const Invoices: React.FC = () => {
                       setDueDate(val);
                       setFormErrors(prev => ({ ...prev, due_date: '' }));
                     }}
-                    required
                     className={formErrors.due_date ? 'border-red-500/80 focus:border-red-500' : ''}
                   />
                   {formErrors.due_date && (

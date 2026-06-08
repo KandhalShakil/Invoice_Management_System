@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Mail, Check, X, Loader2, Receipt, ArrowRight, ShieldAlert } from 'lucide-react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Mail, Check, Loader2, Receipt, ArrowRight, ShieldAlert } from 'lucide-react';
 import api from '../services/api';
 
 const VerifyEmail: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   
   const uid = searchParams.get('uid');
   const token = searchParams.get('token');

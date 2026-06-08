@@ -3,6 +3,7 @@ import { Bell, Check } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Notification } from '../types';
+import { mutate as globalMutate } from 'swr';
 
 const NotificationCenter: React.FC = () => {
   const { activeOrg } = useAuth();
@@ -39,7 +40,7 @@ const NotificationCenter: React.FC = () => {
     wsRef.current = socket;
 
     socket.onopen = () => {
-      console.log('Real-time notifications channel connected.');
+      // Channel connected
     };
 
     socket.onmessage = (event) => {
@@ -48,7 +49,14 @@ const NotificationCenter: React.FC = () => {
         
         // 1. Check if the WebSocket frame represents a real-time data sync trigger
         if (data.type === 'data_changed') {
-          // Dispatch global sync event to notify other modules
+          // Trigger global SWR revalidation dynamically based on the model that changed
+          if (data.model) {
+            // Models like customer, product, invoice are pluralized in standard SWR cache keys
+            const keyPrefix = `/${data.model}s/`;
+            globalMutate(key => typeof key === 'string' && key.startsWith(keyPrefix));
+          }
+          
+          // Dispatch global sync event to notify any non-SWR modules
           window.dispatchEvent(new CustomEvent('app:sync', { detail: data }));
           return;
         }
@@ -80,7 +88,7 @@ const NotificationCenter: React.FC = () => {
     };
 
     socket.onclose = () => {
-      console.log('Real-time notifications channel closed.');
+      // Channel closed
     };
 
     return () => {

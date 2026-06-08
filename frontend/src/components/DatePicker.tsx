@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface DatePickerProps {
   value: string; // Format: YYYY-MM-DD
   onChange: (value: string) => void;
   className?: string;
   placeholder?: string;
-  required?: boolean;
   disabled?: boolean;
   minDate?: string;
   maxDate?: string;
@@ -17,7 +16,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
   onChange,
   className = '',
   placeholder = 'Select Date',
-  required = false,
   disabled = false,
   minDate,
   maxDate,

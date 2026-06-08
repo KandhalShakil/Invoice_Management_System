@@ -30,6 +30,25 @@ def send_sync_event(model_name, action, instance):
     if not channel_layer:
         return
         
+    # Dynamically serialize instance to avoid frontend refetching
+    payload_data = None
+    if action != 'delete':
+        try:
+            if model_name == 'customer':
+                from apps.customers.serializers import CustomerSerializer
+                payload_data = CustomerSerializer(instance).data
+            elif model_name == 'product':
+                from apps.products.serializers import ProductSerializer
+                payload_data = ProductSerializer(instance).data
+            elif model_name == 'invoice':
+                from apps.invoices.serializers import InvoiceListSerializer, InvoiceSerializer
+                try:
+                    payload_data = InvoiceSerializer(instance).data
+                except:
+                    payload_data = None
+        except Exception as e:
+            logger.error(f"Failed to serialize payload for {model_name}: {e}")
+
     # Build sync event payload
     payload = {
         "type": "send_notification",
@@ -38,6 +57,7 @@ def send_sync_event(model_name, action, instance):
             "model": model_name,
             "action": action,
             "id": str(instance.id),
+            "payload": payload_data
         }
     }
     

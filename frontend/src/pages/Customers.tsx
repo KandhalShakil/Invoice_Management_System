@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import useSWR, { mutate as globalMutate } from 'swr';
+import { fetcher } from '../utils/fetcher';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Plus, Edit2, Trash2, Search, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
@@ -8,35 +10,41 @@ import { validatePhone, validateEmail } from '../utils/validation';
 
 const Customers: React.FC = () => {
   const { activeOrg, activeRole } = useAuth();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   
-  // Pagination & Search States
   const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  const cacheKey = activeOrg ? `/customers/?page=${page}&search=${debouncedSearch}` : null;
+  const { data: fetchResult, error: swrError, mutate: boundMutate } = useSWR(cacheKey, fetcher);
   
-  // Form modal controls
+  const customers: Customer[] = fetchResult?.results || fetchResult || [];
+  const totalCount = fetchResult?.count || customers.length;
+  const isLoading = !fetchResult && !swrError;
+
+  // Real-time synchronization cache invalidation
+  useEffect(() => {
+    const handleSync = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) return;
+      if (detail.model === 'customer') {
+        globalMutate(key => typeof key === 'string' && key.startsWith('/customers/'));
+      }
+    };
+    window.addEventListener('app:sync', handleSync);
+    return () => window.removeEventListener('app:sync', handleSync);
+  }, []);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   const [isOpen, setIsOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  
-  // Input fields
-  const [contactName, setContactName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  
-  // Addresses
-  const [billingStreet, setBillingStreet] = useState('');
-  const [billingCity, setBillingCity] = useState('');
-  const [billingState, setBillingState] = useState('');
-  const [billingCountry, setBillingCountry] = useState('India');
-  const [billingZip, setBillingZip] = useState('');
-  
-  const [notes, setNotes] = useState('');
-  const [tags, setTags] = useState('');
-  const [error, setError] = useState('');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -45,48 +53,18 @@ const Customers: React.FC = () => {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Debouncing Search Input
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setPage(1); // Reset page to 1 on new search
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
-
-  const fetchCustomers = async () => {
-    if (!activeOrg) return;
-    try {
-      setIsLoading(true);
-      const res = await api.get(`/customers/?page=${page}&search=${debouncedSearch}`);
-      if (res.data.results) {
-        setCustomers(res.data.results);
-        setTotalCount(res.data.count);
-      } else {
-        setCustomers(res.data);
-        setTotalCount(res.data.length);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCustomers();
-  }, [activeOrg, page, debouncedSearch]);
-
-  useEffect(() => {
-    const handleSync = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail && ['customer', 'invoice'].includes(detail.model)) {
-        fetchCustomers();
-      }
-    };
-    window.addEventListener('app:sync', handleSync);
-    return () => window.removeEventListener('app:sync', handleSync);
-  }, [activeOrg]);
+  const [contactName, setContactName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [billingStreet, setBillingStreet] = useState('');
+  const [billingCity, setBillingCity] = useState('');
+  const [billingState, setBillingState] = useState('');
+  const [billingCountry, setBillingCountry] = useState('India');
+  const [billingZip, setBillingZip] = useState('');
+  const [notes, setNotes] = useState('');
+  const [tags, setTags] = useState('');
+  const [error, setError] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const resetForm = () => {
     setEditId(null);
@@ -169,48 +147,68 @@ const Customers: React.FC = () => {
     };
 
     setIsSubmitting(true);
-    try {
-      if (editId) {
-        await api.put(`/customers/${editId}/`, payload);
+    setIsOpen(false); // Optimistically close modal instantly
+
+    if (editId) {
+      const optimisticCustomers = customers.map(c => c.id === editId ? { ...c, ...payload } : c);
+      const optimisticResult = fetchResult?.results ? { ...fetchResult, results: optimisticCustomers } : optimisticCustomers;
+      
+      try {
+        await boundMutate(
+          api.put(`/customers/${editId}/`, payload).then(() => fetcher(cacheKey as string)),
+          { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
+        );
         showToast('Customer updated successfully.', 'success');
-      } else {
-        await api.post('/customers/', payload);
+        resetForm();
+      } catch (err: any) {
+        setIsOpen(true); // Re-open modal on rollback error
+        handleError(err);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      const tempId = `temp_${Date.now()}`;
+      const tempCust = { id: tempId, ...payload, organization_id: activeOrg };
+      const optimisticCustomers = [tempCust, ...customers];
+      const optimisticResult = fetchResult?.results ? { ...fetchResult, count: totalCount + 1, results: optimisticCustomers } : optimisticCustomers;
+
+      try {
+        await boundMutate(
+          api.post('/customers/', payload).then(() => fetcher(cacheKey as string)),
+          { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
+        );
         showToast('Customer added successfully.', 'success');
+        resetForm();
+      } catch (err: any) {
+        setIsOpen(true); // Re-open modal on rollback error
+        handleError(err);
+      } finally {
+        setIsSubmitting(false);
       }
-      setIsOpen(false);
-      resetForm();
-      fetchCustomers();
-    } catch (err: any) {
-      if (err.response && err.response.status === 400 && typeof err.response.data === 'object') {
-        const data = err.response.data;
-        const fieldErrors: Record<string, string> = {};
-        Object.keys(data).forEach((key) => {
-          const val = data[key];
-          // Map backend nested address error fields to flat names
-          if (key === 'billing_address' && typeof val === 'object') {
-            Object.keys(val).forEach((addressKey) => {
-              const addressVal = val[addressKey];
-              fieldErrors[`billing_${addressKey}`] = Array.isArray(addressVal) ? addressVal[0] : addressVal;
-            });
-          } else {
-            fieldErrors[key] = Array.isArray(val) ? val[0] : val;
-          }
-        });
-        setFormErrors(fieldErrors);
+    }
+  };
 
-        // Autofocus first invalid field
-        const firstInvalidKey = Object.keys(fieldErrors)[0];
-        const el = document.getElementById(`cust_${firstInvalidKey}`);
-        if (el) el.focus();
-
-        showToast('Please correct the highlighted errors.', 'error');
-      } else {
-        const msg = err.response?.data?.error || 'Failed to submit customer profile.';
-        setError(msg);
-        showToast(msg, 'error');
-      }
-    } finally {
-      setIsSubmitting(false);
+  const handleError = (err: any) => {
+    if (err.response && err.response.status === 400 && typeof err.response.data === 'object') {
+      const data = err.response.data;
+      const fieldErrors: Record<string, string> = {};
+      Object.keys(data).forEach((key) => {
+        const val = data[key];
+        if (key === 'billing_address' && typeof val === 'object') {
+          Object.keys(val).forEach((addressKey) => {
+            const addressVal = val[addressKey];
+            fieldErrors[`billing_${addressKey}`] = Array.isArray(addressVal) ? addressVal[0] : addressVal;
+          });
+        } else {
+          fieldErrors[key] = Array.isArray(val) ? val[0] : val;
+        }
+      });
+      setFormErrors(fieldErrors);
+      showToast('Please correct the highlighted errors. Changes rolled back.', 'error');
+    } else {
+      const msg = err.response?.data?.error || 'Unable to save changes. Changes have been reverted.';
+      setError(msg);
+      showToast(msg, 'error');
     }
   };
 
@@ -218,8 +216,13 @@ const Customers: React.FC = () => {
     if (!window.confirm("Are you sure you want to delete this customer?")) return;
     setIsSubmitting(true);
     try {
-      await api.delete(`/customers/${id}/`);
-      fetchCustomers();
+      const optimisticCustomers = customers.filter(c => c.id !== id);
+      const optimisticResult = fetchResult?.results ? { ...fetchResult, count: Math.max(0, totalCount - 1), results: optimisticCustomers } : optimisticCustomers;
+      
+      await boundMutate(
+        api.delete(`/customers/${id}/`).then(() => fetcher(cacheKey as string)),
+        { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
+      );
       showToast('Customer deleted successfully!', 'success');
     } catch (e: any) {
       const msg = e.response?.data?.error || e.response?.data?.detail || "Failed to delete customer. They may have active invoices.";
