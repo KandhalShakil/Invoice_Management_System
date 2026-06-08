@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Received - Invoice {{ invoice_number }}</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 32px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        .content {
+            padding: 40px 32px;
+            line-height: 1.6;
+        }
+        .content h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+        .content p {
+            color: #475569;
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+        .receipt-card {
+            background-color: #f0fdf4;
+            border: 1px solid #dcfce7;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .receipt-row:last-child {
+            margin-bottom: 0;
+            padding-top: 12px;
+            border-top: 1px dashed #bbf7d0;
+        }
+        .receipt-label {
+            color: #166534;
+            font-weight: 500;
+        }
+        .receipt-value {
+            color: #14532d;
+            font-weight: 600;
+            text-align: right;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #10b981;
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+            transition: all 0.2s ease;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 24px 32px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .footer a {
+            color: #4f46e5;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ org_name }}</h1>
+        </div>
+        <div class="content">
+            <h2>Payment Receipt Confirmation</h2>
+            <p>Dear {{ customer_name }},</p>
+            <p>Thank you for your payment. We have successfully processed and recorded your payment for invoice <strong>{{ invoice_number }}</strong>.</p>
+            
+            <div class="receipt-card">
+                <div class="receipt-row">
+                    <span class="receipt-label">Invoice Number: </span>
+                    <span class="receipt-value">{{ invoice_number }}</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-label">Amount Paid: </span>
+                    <span class="receipt-value" style="font-size: 18px; color: #059669;">₹{{ paid_amount }}</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-label">Remaining Balance: </span>
+                    <span class="receipt-value">₹{{ remaining_balance }}</span>
+                </div>
+            </div>
+
+            <p>You can view the updated invoice and download the official payment receipt in your customer portal:</p>
+            
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="{{ portal_url }}" class="cta-button">View Payment Receipt</a>
+            </div>
+            
+            <p>If you have any questions, please feel free to reach out.</p>
+            <p>Thank you for your business!</p>
+            <p>Best Regards,<br>{{ org_name }}</p>
+        </div>
+        <div class="footer">
+            <p>Securely processed via Invoicely.<br>
+            © 2026 Invoicely Inc. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

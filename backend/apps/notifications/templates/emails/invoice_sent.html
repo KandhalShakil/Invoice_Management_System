@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ invoice_number }} from {{ org_name }}</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            padding: 32px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        .content {
+            padding: 40px 32px;
+            line-height: 1.6;
+        }
+        .content h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+        .content p {
+            color: #475569;
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+        .invoice-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+        .invoice-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .invoice-row:last-child {
+            margin-bottom: 0;
+            padding-top: 12px;
+            border-top: 1px dashed #cbd5e1;
+        }
+        .invoice-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+        .invoice-value {
+            color: #0f172a;
+            font-weight: 600;
+            text-align: right;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+            transition: all 0.2s ease;
+        }
+        .upi-box {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 28px;
+            text-align: center;
+            font-size: 14px;
+            color: #166534;
+        }
+        .upi-id {
+            font-family: monospace;
+            background-color: #ffffff;
+            border: 1px solid #dcfce7;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 24px 32px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .footer a {
+            color: #4f46e5;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ org_name }}</h1>
+        </div>
+        <div class="content">
+            <h2>New Invoice Received</h2>
+            <p>Dear {{ customer_name }},</p>
+            <p>We hope this email finds you well. <strong>{{ org_name }}</strong> has issued a new invoice <strong>{{ invoice_number }}</strong> for your account.</p>
+            
+            <div class="invoice-card">
+                <div class="invoice-row">
+                    <span class="invoice-label">Invoice Number</span>
+                    <span class="invoice-value">{{ invoice_number }}</span>
+                </div>
+                <div class="invoice-row">
+                    <span class="invoice-label">Issue Date</span>
+                    <span class="invoice-value">{{ issue_date }}</span>
+                </div>
+                <div class="invoice-row">
+                    <span class="invoice-label">Due Date</span>
+                    <span class="invoice-value">{{ due_date }}</span>
+                </div>
+                <div class="invoice-row">
+                    <span class="invoice-label">Amount Due</span>
+                    <span class="invoice-value" style="font-size: 18px; color: #4f46e5;">₹{{ amount }}</span>
+                </div>
+            </div>
+
+            {% if upi_id %}
+            <div class="upi-box">
+                💡 Pay directly via UPI to: <span class="upi-id">{{ upi_id }}</span>
+            </div>
+            {% endif %}
+
+            <p>A detailed PDF copy of the invoice is attached to this email. You can also view details and process your payment online via our secure customer portal:</p>
+            
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="{{ payment_url }}" class="cta-button">View & Pay Invoice</a>
+            </div>
+            
+            <p>If you have any questions regarding this invoice, please reply directly to this email or contact support.</p>
+            <p>Thank you for your business!</p>
+            <p>Best Regards,<br>{{ org_name }}</p>
+        </div>
+        <div class="footer">
+            <p>Securely delivered via Invoicely.<br>
+            © 2026 Invoicely Inc. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

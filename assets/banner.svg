@@ -1,0 +1,329 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="100%" height="100%">
+  <defs>
+    <!-- Fonts -->
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap');
+      
+      .brand-title {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-weight: 800;
+        fill: #ffffff;
+        letter-spacing: -0.03em;
+      }
+      
+      .brand-subtitle {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-weight: 500;
+        fill: #94a3b8;
+        font-size: 14px;
+        letter-spacing: -0.01em;
+      }
+
+      .mono-text {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        fill: #6366f1;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+
+      .badge-text {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-weight: 600;
+        font-size: 10px;
+        fill: #e2e8f0;
+      }
+
+      .card-title {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-weight: 600;
+        font-size: 11px;
+        fill: #94a3b8;
+      }
+
+      .card-value {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-weight: 700;
+        font-size: 18px;
+        fill: #ffffff;
+        letter-spacing: -0.02em;
+      }
+
+      .card-meta {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-weight: 500;
+        font-size: 9px;
+        fill: #10b981;
+      }
+
+      /* Core Animations */
+      @keyframes floatDashboard {
+        0%, 100% { transform: translateY(0px) rotateX(12deg) rotateY(-18deg) rotateZ(4deg); }
+        50% { transform: translateY(-6px) rotateX(10deg) rotateY(-16deg) rotateZ(3deg); }
+      }
+
+      @keyframes floatCard1 {
+        0%, 100% { transform: translateY(0px) translateZ(40px) rotateX(12deg) rotateY(-18deg) rotateZ(4deg); }
+        50% { transform: translateY(-10px) translateZ(50px) rotateX(11deg) rotateY(-17deg) rotateZ(3.5deg); }
+      }
+
+      @keyframes floatCard2 {
+        0%, 100% { transform: translateY(0px) translateZ(60px) rotateX(12deg) rotateY(-18deg) rotateZ(4deg); }
+        50% { transform: translateY(-8px) translateZ(70px) rotateX(13deg) rotateY(-19deg) rotateZ(4.5deg); }
+      }
+
+      @keyframes lineFlow {
+        0% { stroke-dashoffset: 40; }
+        100% { stroke-dashoffset: 0; }
+      }
+
+      @keyframes pulseSync {
+        0%, 100% { transform: scale(1); opacity: 0.4; }
+        50% { transform: scale(1.15); opacity: 0.8; }
+      }
+
+      @keyframes pulseGlow {
+        0%, 100% { opacity: 0.15; }
+        50% { opacity: 0.3; }
+      }
+
+      /* Styles */
+      .anim-dashboard {
+        animation: floatDashboard 8s ease-in-out infinite;
+        transform-origin: 550px 150px;
+        transform-style: preserve-3d;
+      }
+
+      .anim-card-1 {
+        animation: floatCard1 7s ease-in-out infinite;
+        transform-origin: 480px 180px;
+        transform-style: preserve-3d;
+      }
+
+      .anim-card-2 {
+        animation: floatCard2 9s ease-in-out infinite;
+        transform-origin: 640px 110px;
+        transform-style: preserve-3d;
+      }
+
+      .flow-stream {
+        stroke-dasharray: 8, 12;
+        animation: lineFlow 3s linear infinite;
+      }
+
+      .glow-layer {
+        animation: pulseGlow 6s ease-in-out infinite;
+      }
+    </style>
+
+    <!-- Gradients -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#030712" />
+      <stop offset="40%" stop-color="#0b0f19" />
+      <stop offset="100%" stop-color="#02040a" />
+    </linearGradient>
+
+    <linearGradient id="glowPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#818cf8" stop-opacity="0" />
+    </linearGradient>
+
+    <linearGradient id="glowCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#0891b2" stop-opacity="0" />
+    </linearGradient>
+
+    <linearGradient id="primaryBrandGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+
+    <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#4f46e5" stop-opacity="0" />
+    </linearGradient>
+
+    <linearGradient id="emeraldChartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+    </linearGradient>
+
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#111827" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#0b0f19" stop-opacity="0.95" />
+    </linearGradient>
+
+    <linearGradient id="glassBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15" />
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.02" />
+      <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.15" />
+    </linearGradient>
+
+    <!-- Filters for Depth -->
+    <filter id="softShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+    <filter id="strongShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+    <filter id="panelGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="20" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Layer -->
+  <rect width="800" height="300" fill="url(#bgGradient)" />
+
+  <!-- Ambient Light Glows -->
+  <circle cx="550" cy="150" r="160" fill="url(#glowPurple)" class="glow-layer" filter="url(#panelGlow)" />
+  <circle cx="680" cy="80" r="120" fill="url(#glowCyan)" class="glow-layer" filter="url(#panelGlow)" />
+  
+  <!-- Subtle Grid Lines (Modern B2B Dot-Matrix style) -->
+  <g stroke="#ffffff" stroke-opacity="0.03" stroke-width="1">
+    <pattern id="dotGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.8" fill="#ffffff" fill-opacity="0.2" />
+    </pattern>
+    <rect width="800" height="300" fill="url(#dotGrid)" />
+  </g>
+
+  <!-- Left Side: Brand Identity & Tech Specs -->
+  <g transform="translate(60, 85)">
+    <!-- Subtitle / Mono Category -->
+    <text class="mono-text" x="0" y="0">ENTERPRISE SAAS SYSTEM</text>
+    
+    <!-- Title -->
+    <text class="brand-title" x="0" y="32" font-size="36" fill="url(#primaryBrandGrad)">Invoicely</text>
+    
+    <!-- Description -->
+    <text class="brand-subtitle" x="0" y="58">High-performance invoice management, automated</text>
+    <text class="brand-subtitle" x="0" y="76">billing workflows, and real-time revenue analytics.</text>
+
+    <!-- Modern Minimalist Tech Badges -->
+    <g transform="translate(0, 105)">
+      <!-- Badge 1: Next.js/React -->
+      <rect x="0" y="0" width="80" height="22" rx="6" fill="#0b0f19" stroke="#1f2937" stroke-width="1" />
+      <circle cx="10" cy="11" r="3" fill="#6366f1" />
+      <text class="badge-text" x="20" y="14">React TS</text>
+
+      <!-- Badge 2: Django/Celery -->
+      <rect x="90" y="0" width="90" height="22" rx="6" fill="#0b0f19" stroke="#1f2937" stroke-width="1" />
+      <circle cx="100" cy="11" r="3" fill="#10b981" />
+      <text class="badge-text" x="110" y="14">Django REST</text>
+
+      <!-- Badge 3: Redis WebSocket -->
+      <rect x="190" y="0" width="75" height="22" rx="6" fill="#0b0f19" stroke="#1f2937" stroke-width="1" />
+      <circle cx="200" cy="11" r="3" fill="#06b6d4" />
+      <text class="badge-text" x="210" y="14">WS Live</text>
+    </g>
+  </g>
+
+  <!-- Flowing Tech Data Lines Connecting Left and Right -->
+  <g fill="none" opacity="0.15">
+    <path d="M 330 110 C 400 110, 380 70, 450 70" stroke="#6366f1" stroke-width="1" />
+    <path d="M 330 140 C 420 140, 370 160, 480 160" stroke="#06b6d4" stroke-width="1" class="flow-stream" />
+    <path d="M 330 190 C 390 190, 420 220, 500 220" stroke="#10b981" stroke-width="1" />
+  </g>
+
+  <!-- Right Side: Redesigned 3D Perspective Dashboard -->
+  <!-- Applying 3D Isometric / Skew Matrix to the Entire Dashboard Group -->
+  <g transform="matrix(0.92 0 -0.05 0.92 50 15)" filter="url(softShadow)">
+    
+    <!-- 1. MAIN SYSTEM DASHBOARD PANEL (Back Layer) -->
+    <g class="anim-dashboard">
+      <!-- Outer glass border -->
+      <rect x="420" y="30" width="280" height="190" rx="14" fill="url(#glassBorder)" />
+      <!-- Inner card background -->
+      <rect x="421" y="31" width="278" height="188" rx="13" fill="url(#cardGrad)" />
+      
+      <!-- Dashboard Top Window Controls -->
+      <circle cx="438" cy="46" r="3.5" fill="#ef4444" opacity="0.8" />
+      <circle cx="448" cy="46" r="3.5" fill="#f59e0b" opacity="0.8" />
+      <circle cx="458" cy="46" r="3.5" fill="#10b981" opacity="0.8" />
+      <line x1="474" y1="46" x2="520" y2="46" stroke="#1f2937" stroke-width="2.5" stroke-linecap="round" />
+      <line x1="650" y1="46" x2="685" y2="46" stroke="#374151" stroke-width="2" stroke-linecap="round" opacity="0.5" />
+
+      <!-- Left Sidebar Simulation inside Dashboard -->
+      <rect x="428" y="65" width="45" height="145" rx="6" fill="#030712" fill-opacity="0.4" />
+      <rect x="434" y="72" width="33" height="8" rx="2" fill="#6366f1" fill-opacity="0.8" />
+      <rect x="434" y="86" width="33" height="5" rx="1.5" fill="#1f2937" />
+      <rect x="434" y="96" width="33" height="5" rx="1.5" fill="#1f2937" />
+      <rect x="434" y="106" width="33" height="5" rx="1.5" fill="#1f2937" />
+      <rect x="434" y="116" width="33" height="5" rx="1.5" fill="#1f2937" />
+      
+      <!-- Main Content Area: Metric Widget -->
+      <g transform="translate(482, 65)">
+        <!-- Grid/Metric Background -->
+        <rect x="0" y="0" width="208" height="145" rx="8" fill="#030712" fill-opacity="0.5" />
+        
+        <!-- Header Text -->
+        <text class="card-title" x="12" y="18">REVENUE STREAM OVERVIEW</text>
+        <text class="card-value" x="12" y="38">$142,850.50</text>
+        <text class="card-meta" x="125" y="36">+12.4% ARR</text>
+        
+        <!-- Complex Dashboard Line Chart -->
+        <!-- Chart Grid Lines -->
+        <line x1="12" y1="65" x2="196" y2="65" stroke="#1f2937" stroke-width="0.75" stroke-dasharray="2 2" />
+        <line x1="12" y1="95" x2="196" y2="95" stroke="#1f2937" stroke-width="0.75" stroke-dasharray="2 2" />
+        <line x1="12" y1="125" x2="196" y2="125" stroke="#1f2937" stroke-width="0.75" stroke-dasharray="2 2" />
+
+        <!-- Chart Fill Gradient Area -->
+        <path d="M 12 125 L 12 105 Q 35 110, 50 85 T 90 70 T 130 90 T 160 55 T 196 45 L 196 125 Z" fill="url(#chartGradient)" />
+        <!-- Glowing Chart Line -->
+        <path d="M 12 105 Q 35 110, 50 85 T 90 70 T 130 90 T 160 55 T 196 45" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" />
+        <path d="M 12 105 Q 35 110, 50 85 T 90 70 T 130 90 T 160 55 T 196 45" fill="none" stroke="#6366f1" stroke-width="4" stroke-opacity="0.3" stroke-linecap="round" />
+        
+        <!-- Interactive Node dot on Chart -->
+        <circle cx="160" cy="55" r="3.5" fill="#ffffff" stroke="#6366f1" stroke-width="1.5" />
+      </g>
+    </g>
+
+    <!-- 2. FLOATING CARD A: REVENUE GROWTH (Bottom Left Overlap) -->
+    <g class="anim-card-1" transform="translate(0, 0)">
+      <!-- Outer glass border -->
+      <rect x="360" y="140" width="130" height="90" rx="10" fill="url(#glassBorder)" filter="url(#strongShadow)" />
+      <!-- Inner card background -->
+      <rect x="361" y="141" width="128" height="88" rx="9" fill="url(#cardGrad)" />
+      
+      <!-- Widget Content -->
+      <text class="card-title" x="372" y="158" font-size="9" fill="#94a3b8">GROWTH INDEX</text>
+      <text class="card-value" x="372" y="176" font-size="14">$48,250</text>
+      
+      <!-- Growth indicator badge -->
+      <rect x="372" y="184" width="36" height="12" rx="3" fill="#10b981" fill-opacity="0.1" />
+      <text x="376" y="193" font-family="Plus Jakarta Sans, sans-serif" font-weight="700" font-size="7" fill="#10b981">+24.2%</text>
+
+      <!-- Mini Chart inside growth widget -->
+      <path d="M 420 205 L 430 195 L 440 198 L 450 188 L 460 192 L 470 178" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" />
+      <path d="M 420 205 L 430 195 L 440 198 L 450 188 L 460 192 L 470 178 L 470 215 L 420 215 Z" fill="url(#emeraldChartGrad)" opacity="0.5" />
+      <circle cx="470" cy="178" r="2" fill="#ffffff" />
+    </g>
+
+    <!-- 3. FLOATING CARD B: REAL-TIME NOTIFICATION (Top Right Overlap) -->
+    <g class="anim-card-2" transform="translate(0, 0)">
+      <!-- Outer glass border -->
+      <rect x="610" y="60" width="140" height="52" rx="10" fill="url(#glassBorder)" filter="url(#strongShadow)" />
+      <!-- Inner card background -->
+      <rect x="611" y="61" width="138" height="50" rx="9" fill="url(#cardGrad)" />
+      
+      <!-- Success indicator badge/icon -->
+      <circle cx="630" cy="86" r="10" fill="#10b981" fill-opacity="0.1" />
+      <!-- Checkmark -->
+      <path d="M 626 86 L 629 89 L 634 83" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+      
+      <!-- Notification details -->
+      <text font-family="Plus Jakarta Sans, sans-serif" font-weight="700" font-size="9" fill="#ffffff" x="648" y="80">Invoice #1842 Paid</text>
+      <text font-family="Plus Jakarta Sans, sans-serif" font-weight="500" font-size="8" fill="#64748b" x="648" y="92">Acme Corp · $8,420</text>
+      
+      <!-- Pulsing synchronization/live notification dot -->
+      <circle cx="732" cy="74" r="3" fill="#ef4444" />
+      <circle cx="732" cy="74" r="6" fill="#ef4444" fill-opacity="0.3" class="sync-node" style="transform-origin: 732px 74px;" />
+    </g>
+  </g>
+</svg>

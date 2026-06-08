@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Login Detected</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+            padding: 32px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        .content {
+            padding: 40px 32px;
+            line-height: 1.6;
+        }
+        .content h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+        .content p {
+            color: #475569;
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+        .details-table th, .details-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .details-table th {
+            font-weight: 600;
+            color: #475569;
+            background-color: #f1f5f9;
+        }
+        .details-table td {
+            color: #1e293b;
+        }
+        .warning-box {
+            background-color: #fff1f2;
+            border-left: 4px solid #f43f5e;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: #9f1239;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 24px 32px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .footer a {
+            color: #4f46e5;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Invoicely Security</h1>
+        </div>
+        <div class="content">
+            <h2>New Login Detected</h2>
+            <p>Hello {{ username }},</p>
+            <p>We detected a new successful login session on your Invoicely account. Here are the details of the session:</p>
+            
+            <table class="details-table">
+                <tr>
+                    <th>Date & Time</th>
+                    <td>{{ timestamp }}</td>
+                </tr>
+                <tr>
+                    <th>IP Address</th>
+                    <td>{{ ip_address }}</td>
+                </tr>
+                <tr>
+                    <th>Device/Agent</th>
+                    <td>{{ device_name }}</td>
+                </tr>
+            </table>
+
+            <div class="warning-box">
+                <strong>Not you?</strong> If you did not log in at this time, someone else may have access to your account. Please change your password and revoke any active sessions immediately.
+            </div>
+
+            <p>Best Regards,<br>The Invoicely Security Team</p>
+        </div>
+        <div class="footer">
+            <p>This is a secure automated security alert from Invoicely.<br>
+            © 2026 Invoicely Inc. All rights reserved.<br>
+            <a href="{{ support_url }}">Support Portal</a> | <a href="{{ privacy_url }}">Privacy Policy</a></p>
+        </div>
+    </div>
+</body>
+</html>
