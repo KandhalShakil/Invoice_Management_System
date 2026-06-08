@@ -110,6 +110,9 @@ class LoginSerializer(serializers.Serializer):
             if not user.is_active:
                 raise serializers.ValidationError("This user account is deactivated.")
             
+            if not user.is_verified and not user.is_superuser:
+                raise serializers.ValidationError({"email": "Please verify your email address before logging in."})
+            
             membership = user.memberships.first()
             if membership:
                 if membership.approval_status == 'pending':
