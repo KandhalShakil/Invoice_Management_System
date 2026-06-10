@@ -90,7 +90,7 @@ const Login: React.FC = () => {
         const genericError = data.non_field_errors?.[0] || data.detail || data.error;
         
         if (genericError) {
-          setError(genericError);
+          setError(typeof genericError === 'object' ? genericError.message || JSON.stringify(genericError) : genericError);
         } else {
           Object.keys(data).forEach((key) => {
             const val = data[key];
@@ -103,7 +103,8 @@ const Login: React.FC = () => {
           setError('Please correct the highlighted errors.');
         }
       } else {
-        setError(err.response?.data?.error || err.response?.data?.non_field_errors?.[0] || 'Invalid email or password.');
+        const _err = err.response?.data?.error || err.response?.data?.non_field_errors?.[0] || 'Invalid email or password.';
+        setError(typeof _err === 'object' ? _err.message || JSON.stringify(_err) : _err);
       }
     } finally {
       setIsLoading(false);
@@ -134,7 +135,8 @@ const Login: React.FC = () => {
         const el = document.getElementById('login_otp_code');
         if (el) el.focus();
       } else {
-        setError(err.response?.data?.error || 'Invalid or expired 2FA code.');
+        const _err = err.response?.data?.error || 'Invalid or expired 2FA code.';
+        setError(typeof _err === 'object' ? _err.message || JSON.stringify(_err) : _err);
       }
     } finally {
       setIsLoading(false);

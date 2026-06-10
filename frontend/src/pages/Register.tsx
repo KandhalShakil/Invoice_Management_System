@@ -125,7 +125,8 @@ const Register: React.FC = () => {
         if (el) el.focus();
         setError('Please correct the highlighted errors.');
       } else {
-        setError(err.response?.data?.error || 'Failed to construct organization. Check input fields.');
+        const _err = err.response?.data?.error || 'Failed to construct organization. Check input fields.';
+        setError(typeof _err === 'object' ? _err.message || JSON.stringify(_err) : _err);
       }
     } finally {
       setIsLoading(false);

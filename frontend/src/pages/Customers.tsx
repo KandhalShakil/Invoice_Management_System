@@ -225,7 +225,8 @@ const Customers: React.FC = () => {
       setFormErrors(fieldErrors);
       showToast('Please correct the highlighted errors. Changes rolled back.', 'error');
     } else {
-      const msg = err.response?.data?.error || 'Unable to save changes. Changes have been reverted.';
+      let msg = err.response?.data?.error || 'Unable to save changes. Changes have been reverted.';
+      if (typeof msg === 'object') msg = msg.message || JSON.stringify(msg);
       setError(msg);
       showToast(msg, 'error');
     }
