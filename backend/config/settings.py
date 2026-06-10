@@ -17,7 +17,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', _default_secret)
 if not SECRET_KEY:
     raise RuntimeError('DJANGO_SECRET_KEY environment variable is not set. Refusing to start in production mode.')
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1' if DEBUG else '').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,.onrender.com,invoice-management-system-p8uf.onrender.com,invoicely.kandhal.tech,www.invoicely.kandhal.tech').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -309,11 +309,11 @@ BREVO_SENDER_NAME = os.getenv('BREVO_SENDER_NAME', 'Enterprise Invoice System')
 
 # CORS
 CORS_ALLOW_ALL_ORIGINS = DEBUG
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,https://www.invoicely.kandhal.tech,https://invoicely.kandhal.tech').split(',')
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF Trusted Origins
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://localhost:8000').split(',')
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://localhost:8000,https://invoice-management-system-p8uf.onrender.com,https://www.invoicely.kandhal.tech,https://invoicely.kandhal.tech').split(',')
 
 # Security Protection Config
 SECURE_BROWSER_XSS_FILTER = True
@@ -405,5 +405,5 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = int(os.getenv('DATA_UPLOAD_MAX_NUMBER_FIELDS', '
 # =============================================================================
 # Application URLs
 # =============================================================================
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:8000')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://www.invoicely.kandhal.tech')
+BACKEND_URL = os.getenv('BACKEND_URL', 'https://invoice-management-system-p8uf.onrender.com')
