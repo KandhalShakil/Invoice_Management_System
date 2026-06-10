@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://invoice-management-system-p8uf.onrender.com/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -51,7 +51,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
   }
 
   try {
-    const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+    const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://invoice-management-system-p8uf.onrender.com/api/v1';
     const response = await axios.post(`${baseURL}/auth/token/refresh/`, {
       refresh: refreshToken,
     });
