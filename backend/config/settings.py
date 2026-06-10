@@ -312,6 +312,9 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
 CORS_ALLOW_CREDENTIALS = True
 
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://localhost:8000').split(',')
+
 # Security Protection Config
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
