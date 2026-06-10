@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -51,7 +51,8 @@ const refreshAccessToken = async (): Promise<string | null> => {
   }
 
   try {
-    const response = await axios.post('/api/v1/auth/token/refresh/', {
+    const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+    const response = await axios.post(`${baseURL}/auth/token/refresh/`, {
       refresh: refreshToken,
     });
     const newAccessToken = response.data.access;
