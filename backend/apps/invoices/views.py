@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from apps.core.mixins import ValidationMixin
 from apps.invoices.models import Invoice, InvoiceLineItem, InvoiceWorkflowHistory, RecurringInvoiceConfig
 from apps.invoices.serializers import InvoiceSerializer, RecurringInvoiceConfigSerializer
 from apps.organizations.permissions import HasRolePermission
@@ -14,7 +15,7 @@ from apps.invoices.services import PDFInvoiceGenerator
 
 logger = logging.getLogger(__name__)
 
-class InvoiceViewSet(viewsets.ModelViewSet):
+class InvoiceViewSet(ValidationMixin, viewsets.ModelViewSet):
     serializer_class = InvoiceSerializer
     permission_classes = [permissions.IsAuthenticated, HasRolePermission]
     search_fields = ['invoice_number', 'customer__contact_name']

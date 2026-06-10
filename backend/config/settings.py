@@ -237,8 +237,13 @@ if redis_available:
         }
     }
     
-    CELERY_BROKER_URL = REDIS_URL
-    CELERY_RESULT_BACKEND = REDIS_URL
+    celery_url = REDIS_URL
+    if celery_url.startswith('rediss://') and 'ssl_cert_reqs' not in celery_url:
+        separator = '&' if '?' in celery_url else '?'
+        celery_url += f"{separator}ssl_cert_reqs=CERT_NONE"
+        
+    CELERY_BROKER_URL = celery_url
+    CELERY_RESULT_BACKEND = celery_url
 else:
     # Dynamic fallback to local memory caching & in-memory channels when Redis is absent
     import logging

@@ -18,29 +18,21 @@ class ProductSerializer(serializers.ModelSerializer):
             'sku', 'description', 'price', 'tax_rate', 'hsn_sac_code', 
             'is_active', 'type', 'inventory_count', 'created_at', 'updated_at'
         )
-        read_only_fields = ('id', 'organization', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'organization', 'sku', 'created_at', 'updated_at')
 
     def validate_name(self, value):
         if not value or not value.strip():
             raise serializers.ValidationError("Item name is required.")
         # Check uniqueness in current organization tenant
-        queryset = Product.objects.filter(name__iexact=value.strip())
+        org_id = self.context['request'].organization_id
+        queryset = Product.objects.filter(name__iexact=value.strip(), organization_id=org_id)
         if self.instance:
             queryset = queryset.exclude(pk=self.instance.pk)
         if queryset.exists():
             raise serializers.ValidationError("Item name already exists.")
         return value.strip()
 
-    def validate_sku(self, value):
-        if not value or not value.strip():
-            raise serializers.ValidationError("SKU is required.")
-        # Check uniqueness in current organization tenant
-        queryset = Product.objects.filter(sku__iexact=value.strip())
-        if self.instance:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        if queryset.exists():
-            raise serializers.ValidationError("SKU already exists.")
-        return value.strip()
+
 
     def validate_price(self, value):
         if value is None:

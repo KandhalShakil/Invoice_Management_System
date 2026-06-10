@@ -49,6 +49,7 @@ export interface Customer {
   tags: string[];
   created_at: string;
   updated_at: string;
+  _status?: 'saving' | 'error';
 }
 
 export interface Product {
@@ -64,6 +65,7 @@ export interface Product {
   inventory_count: number;
   created_at: string;
   updated_at: string;
+  _status?: 'saving' | 'error';
 }
 
 export interface InvoiceLineItem {
@@ -108,6 +110,7 @@ export interface Invoice {
   workflow_history?: InvoiceWorkflowHistory[];
   created_at: string;
   updated_at: string;
+  _status?: 'saving' | 'error';
 }
 
 export interface AuditLog {

@@ -49,9 +49,9 @@ class TenantManager(models.Manager):
 class BaseModel(models.Model):
     """Base abstract model containing UUID, soft delete, and timestamps."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    deleted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:
         abstract = True

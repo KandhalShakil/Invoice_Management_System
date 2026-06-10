@@ -7,9 +7,9 @@ class Customer(TenantModel):
     Represents a Customer/Client of an Organization.
     Inherits from TenantModel for automatic query isolation.
     """
-    contact_name = models.CharField(max_length=255, default='')
-    email = models.EmailField()
-    phone = models.CharField(max_length=10, validators=[phone_validator], default='0000000000')
+    contact_name = models.CharField(max_length=255, default='', db_index=True)
+    email = models.EmailField(db_index=True)
+    phone = models.CharField(max_length=10, validators=[phone_validator], default='0000000000', db_index=True)
     
     billing_address = models.JSONField(default=dict, blank=True)
     shipping_address = models.JSONField(default=dict, blank=True)

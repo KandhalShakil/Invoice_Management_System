@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useModal } from '../context/ModalContext';
 import { 
   LayoutDashboard, FileText, Users, ShoppingBag, 
   ShieldAlert, BarChart3, Settings, LogOut, Briefcase, Receipt, ChevronDown, Mail
@@ -8,6 +9,7 @@ import {
 
 const Sidebar: React.FC = () => {
   const { user, organizations, activeOrg, activeRole, switchOrganization, logout } = useAuth();
+  const { showModal } = useModal();
 
   const navigation = [
     { name: 'Dashboard', to: '/', icon: LayoutDashboard },
@@ -116,7 +118,15 @@ const Sidebar: React.FC = () => {
             </p>
           </div>
           <button
-            onClick={logout}
+            onClick={() => {
+              showModal({
+                type: 'warning',
+                title: 'Log Out',
+                message: 'Are you sure you want to log out of your account?',
+                confirmText: 'Log Out',
+                onConfirm: logout
+              });
+            }}
             className="p-2 bg-slate-900 hover:bg-red-950/40 hover:text-red-400 text-slate-400 border border-dark-border hover:border-red-500/20 rounded-xl transition-all flex-shrink-0"
             title="Log Out"
           >

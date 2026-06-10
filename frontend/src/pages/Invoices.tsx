@@ -239,6 +239,16 @@ const Invoices: React.FC = () => {
     };
 
     setIsSubmitting(true);
+    
+    // API Pre-Validation
+    try {
+      await api.post('/invoices/validate/', payload);
+    } catch (err: any) {
+      handleError(err);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const tempId = `temp_${Date.now()}`;
       const tempInv = {
@@ -250,6 +260,9 @@ const Invoices: React.FC = () => {
         tax_amount: taxAmount,
         organization_id: activeOrg,
         customer_detail: customers.find(c => c.id === customer),
+        _status: 'saving' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
       const optimisticInvoices = [tempInv, ...invoices];
@@ -264,27 +277,31 @@ const Invoices: React.FC = () => {
       setActiveTab('list');
       showToast('Invoice generated successfully.', 'success');
     } catch (err: any) {
-      if (err.response && err.response.status === 400 && typeof err.response.data === 'object') {
-        const data = err.response.data;
-        const fieldErrors: Record<string, string> = {};
-        Object.keys(data).forEach((key) => {
-          const val = data[key];
-          fieldErrors[key] = Array.isArray(val) ? val[0] : val;
-        });
-        setFormErrors(fieldErrors);
-
-        const firstInvalidKey = Object.keys(fieldErrors)[0];
-        const el = document.getElementById(`inv_${firstInvalidKey}`);
-        if (el) el.focus();
-
-        showToast('Please correct the highlighted errors. Changes rolled back.', 'error');
-      } else {
-        const msg = err.response?.data?.non_field_errors?.[0] || err.response?.data?.error || 'Failed to generate invoice.';
-        setFormError(msg);
-        showToast(msg, 'error');
-      }
+      handleError(err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleError = (err: any) => {
+    if (err.response && err.response.status === 400 && typeof err.response.data === 'object') {
+      const data = err.response.data;
+      const fieldErrors: Record<string, string> = {};
+      Object.keys(data).forEach((key) => {
+        const val = data[key];
+        fieldErrors[key] = Array.isArray(val) ? val[0] : val;
+      });
+      setFormErrors(fieldErrors);
+
+      const firstInvalidKey = Object.keys(fieldErrors)[0];
+      const el = document.getElementById(`inv_${firstInvalidKey}`);
+      if (el) el.focus();
+
+      showToast('Please correct the highlighted errors.', 'error');
+    } else {
+      const msg = err.response?.data?.non_field_errors?.[0] || err.response?.data?.error || 'Failed to process request.';
+      setFormError(msg);
+      showToast(msg, 'error');
     }
   };
 
@@ -576,8 +593,17 @@ const Invoices: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-800/40">
                     {filteredInvoices.map((inv) => (
-                      <tr key={inv.id} className="hover:bg-slate-800/10 transition-colors">
-                        <td className="p-4 font-bold text-slate-200">{inv.invoice_number}</td>
+                      <tr key={inv.id} className={`hover:bg-slate-800/10 transition-colors ${inv._status === 'saving' ? 'opacity-60' : ''}`}>
+                        <td className="p-4 font-bold text-slate-200">
+                          <div className="flex items-center gap-2">
+                            {inv.invoice_number}
+                            {inv._status === 'saving' && (
+                              <span className="bg-emerald-500/20 text-emerald-400 text-[9px] px-1.5 py-0.5 rounded font-bold animate-pulse">
+                                Saving...
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="p-4 font-medium text-slate-300">{inv.customer_detail?.contact_name}</td>
                         <td className="p-4 text-slate-400">
                           <p>Issue: {inv.issue_date}</p>
@@ -599,7 +625,8 @@ const Invoices: React.FC = () => {
                         <td className="p-4 text-right">
                           <button
                             onClick={() => setSelectedInvoice(inv)}
-                            className="p-1.5 bg-slate-800 hover:bg-emerald-950/60 hover:text-emerald-400 rounded-lg text-slate-300 transition-colors"
+                            disabled={inv._status === 'saving'}
+                            className="p-1.5 bg-slate-800 hover:bg-emerald-950/60 hover:text-emerald-400 rounded-lg text-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>

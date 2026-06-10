@@ -1,7 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ModalProvider } from './context/ModalContext';
 import Sidebar from './components/Sidebar';
+import Modal from './components/Modal';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -75,9 +77,12 @@ const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Router>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <ModalProvider>
+        <AuthProvider>
+          <AppRoutes />
+          <Modal />
+        </AuthProvider>
+      </ModalProvider>
     </Router>
   );
 };

@@ -3,6 +3,7 @@ import useSWR, { mutate as globalMutate } from 'swr';
 import { fetcher } from '../utils/fetcher';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useModal } from '../context/ModalContext';
 import { Plus, Edit2, Trash2, Search, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
 import { Customer } from '../types';
 import { validatePhone, validateEmail } from '../utils/validation';
@@ -10,6 +11,7 @@ import { validatePhone, validateEmail } from '../utils/validation';
 
 const Customers: React.FC = () => {
   const { activeOrg, activeRole } = useAuth();
+  const { showModal } = useModal();
   
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -120,6 +122,13 @@ const Customers: React.FC = () => {
     if (!billingState.trim()) errors.billing_state = "State is required.";
     if (!billingZip.trim()) errors.billing_zip = "ZIP code is required.";
 
+    if (customers.some(c => c.email.toLowerCase() === email.trim().toLowerCase() && c.id !== editId)) {
+      errors.email = "Email address already exists.";
+    }
+    if (customers.some(c => c.phone === phone.trim() && c.id !== editId)) {
+      errors.phone = "Phone number already exists.";
+    }
+
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       const firstInvalidKey = Object.keys(errors)[0];
@@ -147,10 +156,20 @@ const Customers: React.FC = () => {
     };
 
     setIsSubmitting(true);
-    setIsOpen(false); // Optimistically close modal instantly
+    
+    // API Pre-Validation
+    try {
+      await api.post('/customers/validate/', { ...payload, id: editId || undefined });
+    } catch (err: any) {
+      handleError(err);
+      setIsSubmitting(false);
+      return;
+    }
+
+    setIsOpen(false); // Optimistically close modal instantly AFTER validation passes
 
     if (editId) {
-      const optimisticCustomers = customers.map(c => c.id === editId ? { ...c, ...payload } : c);
+      const optimisticCustomers = customers.map(c => c.id === editId ? { ...c, ...payload, _status: 'saving' as const } : c);
       const optimisticResult = fetchResult?.results ? { ...fetchResult, results: optimisticCustomers } : optimisticCustomers;
       
       try {
@@ -168,7 +187,7 @@ const Customers: React.FC = () => {
       }
     } else {
       const tempId = `temp_${Date.now()}`;
-      const tempCust = { id: tempId, ...payload, organization_id: activeOrg };
+      const tempCust = { id: tempId, ...payload, organization_id: activeOrg, _status: 'saving' as const, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
       const optimisticCustomers = [tempCust, ...customers];
       const optimisticResult = fetchResult?.results ? { ...fetchResult, count: totalCount + 1, results: optimisticCustomers } : optimisticCustomers;
 
@@ -213,23 +232,30 @@ const Customers: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this customer?")) return;
-    setIsSubmitting(true);
-    try {
-      const optimisticCustomers = customers.filter(c => c.id !== id);
-      const optimisticResult = fetchResult?.results ? { ...fetchResult, count: Math.max(0, totalCount - 1), results: optimisticCustomers } : optimisticCustomers;
-      
-      await boundMutate(
-        api.delete(`/customers/${id}/`).then(() => fetcher(cacheKey as string)),
-        { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
-      );
-      showToast('Customer deleted successfully!', 'success');
-    } catch (e: any) {
-      const msg = e.response?.data?.error || e.response?.data?.detail || "Failed to delete customer. They may have active invoices.";
-      showToast(msg, 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
+    showModal({
+      type: 'confirm',
+      title: 'Delete Customer',
+      message: 'Are you sure you want to delete this customer? This action cannot be undone.',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        setIsSubmitting(true);
+        try {
+          const optimisticCustomers = customers.filter(c => c.id !== id);
+          const optimisticResult = fetchResult?.results ? { ...fetchResult, count: Math.max(0, totalCount - 1), results: optimisticCustomers } : optimisticCustomers;
+          
+          await boundMutate(
+            api.delete(`/customers/${id}/`).then(() => fetcher(cacheKey as string)),
+            { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
+          );
+          showToast('Customer deleted successfully!', 'success');
+        } catch (e: any) {
+          const msg = e.response?.data?.error || e.response?.data?.detail || "Failed to delete customer. They may have active invoices.";
+          showToast(msg, 'error');
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    });
   };
 
   const isViewer = activeRole === 'viewer' || activeRole === 'employee';
@@ -301,19 +327,26 @@ const Customers: React.FC = () => {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {customers.map((cust) => (
-              <div key={cust.id} className="glass p-6 rounded-2xl border border-slate-800/80 flex flex-col justify-between glass-hover">
+              <div key={cust.id} className={`glass p-6 rounded-2xl border border-slate-800/80 flex flex-col justify-between glass-hover ${cust._status === 'saving' ? 'opacity-60' : ''}`}>
                 <div>
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="font-bold text-base font-display text-slate-100">{cust.contact_name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-base font-display text-slate-100">{cust.contact_name}</h3>
+                        {cust._status === 'saving' && (
+                          <span className="bg-emerald-500/20 text-emerald-400 text-[9px] px-1.5 py-0.5 rounded font-bold animate-pulse">
+                            Saving...
+                          </span>
+                        )}
+                      </div>
                       <span className="text-[10px] text-slate-400 font-semibold">{cust.email}</span>
                     </div>
                     {!isViewer && (
                       <div className="flex gap-2">
-                        <button onClick={() => handleEditInit(cust)} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded-lg transition-colors">
+                        <button onClick={() => handleEditInit(cust)} disabled={cust._status === 'saving'} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded-lg transition-colors disabled:opacity-50">
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={() => handleDelete(cust.id)} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded-lg transition-colors">
+                        <button onClick={() => handleDelete(cust.id)} disabled={cust._status === 'saving'} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded-lg transition-colors disabled:opacity-50">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>

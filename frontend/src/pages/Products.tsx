@@ -3,11 +3,13 @@ import useSWR, { mutate as globalMutate } from 'swr';
 import { fetcher } from '../utils/fetcher';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useModal } from '../context/ModalContext';
 import { Plus, Edit2, Trash2, Box, Package, Check, X } from 'lucide-react';
 import { Product } from '../types';
 
 const Products: React.FC = () => {
   const { activeOrg, activeRole } = useAuth();
+  const { showModal } = useModal();
   const cacheKey = activeOrg ? '/products/' : null;
   const { data: fetchResult, error: swrError, mutate: boundMutate } = useSWR(cacheKey, fetcher);
   
@@ -82,11 +84,13 @@ const Products: React.FC = () => {
 
     // Client-side validations
     const errors: Record<string, string> = {};
-    if (!sku.trim()) errors.sku = "SKU is required.";
     if (!name.trim()) errors.name = "Item name is required.";
     if (!price || parseFloat(price) <= 0) errors.price = "Price must be greater than zero.";
     if (type === 'product' && (!inventoryCount || parseInt(inventoryCount) < 0)) {
       errors.inventory_count = "Stock count cannot be negative.";
+    }
+    if (products.some(p => p.name.toLowerCase() === name.trim().toLowerCase() && p.id !== editId)) {
+      errors.name = "Item name already exists.";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -99,7 +103,6 @@ const Products: React.FC = () => {
 
     const payload = {
       name: name.trim(),
-      sku: sku.trim(),
       description,
       price: parseFloat(price),
       tax_rate: parseFloat(taxRate) || 0.00,
@@ -110,10 +113,20 @@ const Products: React.FC = () => {
     };
 
     setIsSubmitting(true);
-    setIsOpen(false); // Optimistic close
+    
+    // API Pre-Validation
+    try {
+      await api.post('/products/validate/', { ...payload, id: editId || undefined });
+    } catch (err: any) {
+      handleError(err);
+      setIsSubmitting(false);
+      return;
+    }
+
+    setIsOpen(false); // Optimistic close ONLY after validation passes
 
     if (editId) {
-      const optimisticProducts = products.map(p => p.id === editId ? { ...p, ...payload } : p);
+      const optimisticProducts = products.map(p => p.id === editId ? { ...p, ...payload, _status: 'saving' as const } : p);
       const optimisticResult = fetchResult?.results ? { ...fetchResult, results: optimisticProducts } : optimisticProducts;
       
       try {
@@ -131,7 +144,7 @@ const Products: React.FC = () => {
       }
     } else {
       const tempId = `temp_${Date.now()}`;
-      const tempProd = { id: tempId, ...payload, organization_id: activeOrg };
+      const tempProd = { id: tempId, ...payload, organization_id: activeOrg, _status: 'saving' as const, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), sku: 'Generating...' };
       const optimisticProducts = [tempProd, ...products];
       const optimisticResult = fetchResult?.results ? { ...fetchResult, results: optimisticProducts } : optimisticProducts;
 
@@ -169,23 +182,30 @@ const Products: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this catalog item?")) return;
-    setIsSubmitting(true);
-    try {
-      const optimisticProducts = products.filter(p => p.id !== id);
-      const optimisticResult = fetchResult?.results ? { ...fetchResult, results: optimisticProducts } : optimisticProducts;
+    showModal({
+      type: 'confirm',
+      title: 'Delete Catalog Item',
+      message: 'Are you sure you want to delete this catalog item? This action cannot be undone.',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        setIsSubmitting(true);
+        try {
+          const optimisticProducts = products.filter(p => p.id !== id);
+          const optimisticResult = fetchResult?.results ? { ...fetchResult, results: optimisticProducts } : optimisticProducts;
 
-      await boundMutate(
-        api.delete(`/products/${id}/`).then(() => fetcher(cacheKey as string)),
-        { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
-      );
-      showToast('Catalog item deleted successfully!', 'success');
-    } catch (e: any) {
-      const msg = e.response?.data?.error || e.response?.data?.detail || "Failed to delete product. It may be referenced in line items.";
-      showToast(msg, 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
+          await boundMutate(
+            api.delete(`/products/${id}/`).then(() => fetcher(cacheKey as string)),
+            { optimisticData: optimisticResult, rollbackOnError: true, populateCache: true, revalidate: false }
+          );
+          showToast('Catalog item deleted successfully!', 'success');
+        } catch (e: any) {
+          const msg = e.response?.data?.error || e.response?.data?.detail || "Failed to delete product. It may be referenced in line items.";
+          showToast(msg, 'error');
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    });
   };
 
   const isViewer = activeRole === 'viewer';
@@ -253,14 +273,21 @@ const Products: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-800/40">
                 {products.map((prod) => (
-                  <tr key={prod.id} className="hover:bg-slate-800/10 transition-colors">
+                  <tr key={prod.id} className={`hover:bg-slate-800/10 transition-colors ${prod._status === 'saving' ? 'opacity-60' : ''}`}>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-slate-800 rounded-lg text-slate-400">
                           {prod.type === 'product' ? <Package className="w-4 h-4 text-emerald-400" /> : <Box className="w-4 h-4 text-sky-400" />}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-200">{prod.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-slate-200">{prod.name}</p>
+                            {prod._status === 'saving' && (
+                              <span className="bg-emerald-500/20 text-emerald-400 text-[9px] px-1.5 py-0.5 rounded font-bold animate-pulse">
+                                Saving...
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10px] text-slate-500 line-clamp-1">{prod.description || 'No description'}</p>
                         </div>
                       </div>
@@ -290,10 +317,10 @@ const Products: React.FC = () => {
                     {!isViewer && (
                       <td className="p-4 text-right">
                         <div className="flex gap-2 justify-end">
-                          <button onClick={() => handleEditInit(prod)} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded-lg transition-colors">
+                          <button onClick={() => handleEditInit(prod)} disabled={prod._status === 'saving'} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded-lg transition-colors disabled:opacity-50">
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => handleDelete(prod.id)} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded-lg transition-colors">
+                          <button onClick={() => handleDelete(prod.id)} disabled={prod._status === 'saving'} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded-lg transition-colors disabled:opacity-50">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -344,22 +371,19 @@ const Products: React.FC = () => {
                 </div>
                 <div>
                   <label className="text-slate-400 font-bold block mb-1">SKU / Unique Identifier</label>
-                  <input
-                    type="text"
-                    id="prod_sku"
-                    required
-                    value={sku}
-                    onChange={(e) => {
-                      setSku(e.target.value);
-                      setFormErrors(prev => ({ ...prev, sku: '' }));
-                    }}
-                    className={`w-full bg-[#111827] border text-slate-200 py-2 px-3 rounded-lg focus:outline-none focus:border-emerald-500 ${
-                      formErrors.sku ? 'border-red-500/80 focus:border-red-500' : 'border-slate-800'
-                    }`}
-                    placeholder="PROD-001 or SRV-05"
-                  />
-                  {formErrors.sku && (
-                    <span className="text-red-500 text-[10px] mt-1 block font-semibold">{formErrors.sku}</span>
+                  {editId ? (
+                    <input
+                      type="text"
+                      id="prod_sku"
+                      value={sku}
+                      readOnly
+                      disabled
+                      className="w-full bg-[#111827] border border-slate-800 text-slate-500 py-2 px-3 rounded-lg focus:outline-none cursor-not-allowed"
+                    />
+                  ) : (
+                    <div className="w-full bg-[#111827]/50 border border-slate-800 border-dashed text-slate-500 py-2 px-3 rounded-lg text-[11px] flex items-center justify-center">
+                      SKU will be generated automatically
+                    </div>
                   )}
                 </div>
               </div>

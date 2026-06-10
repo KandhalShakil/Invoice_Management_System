@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useModal } from '../context/ModalContext';
 import { ShieldAlert, KeyRound, Save, Lock, Trash2, UserPlus } from 'lucide-react';
 import { validatePhone, validateEmail } from '../utils/validation';
 import { Member } from '../types';
@@ -8,6 +9,7 @@ import { Member } from '../types';
 
 const Settings: React.FC = () => {
   const { activeOrg, user, activeRole, refreshProfile } = useAuth();
+  const { showModal } = useModal();
   
   // Organization form states
   const [orgName, setOrgName] = useState('');
@@ -135,37 +137,55 @@ const Settings: React.FC = () => {
   };
 
   const handleRemoveMember = async (targetUserId: string, targetUserEmail: string) => {
-    if (!window.confirm(`Are you sure you want to remove ${targetUserEmail} from this workspace?`)) {
-      return;
-    }
-    
-    try {
-      await api.post(`/organizations/${activeOrg?.id}/members/remove/`, {
-        user_id: targetUserId
-      });
-      setInviteSuccess('Member removed successfully.');
-      fetchMembers();
-    } catch (err: any) {
-      setInviteError(err.response?.data?.error || 'Failed to remove member.');
-    }
+    showModal({
+      type: 'confirm',
+      title: 'Remove Member',
+      message: `Are you sure you want to remove ${targetUserEmail} from this workspace?`,
+      confirmText: 'Remove',
+      onConfirm: async () => {
+        try {
+          await api.post(`/organizations/${activeOrg?.id}/members/remove/`, {
+            user_id: targetUserId
+          });
+          setInviteSuccess('Member removed successfully.');
+          fetchMembers();
+        } catch (err: any) {
+          setInviteError(err.response?.data?.error || 'Failed to remove member.');
+        }
+      }
+    });
   };
 
   const handleResolveMember = async (targetUserId: string, action: 'approve' | 'reject') => {
-    setResolvingMemberId(targetUserId);
-    setResolveMessage('');
-    try {
-      await api.post(`/organizations/${activeOrg?.id}/resolve_member/`, {
-        action,
-        user_id: targetUserId
+    const performResolution = async () => {
+      setResolvingMemberId(targetUserId);
+      setResolveMessage('');
+      try {
+        await api.post(`/organizations/${activeOrg?.id}/resolve_member/`, {
+          action,
+          user_id: targetUserId
+        });
+        setResolveMessage(action === 'approve' ? 'User approved successfully.' : 'User rejected.');
+        fetchMembers();
+        fetchPendingMembers();
+        setTimeout(() => setResolveMessage(''), 3000);
+      } catch (err: any) {
+        setResolveMessage(err.response?.data?.error || `Failed to ${action} user.`);
+      } finally {
+        setResolvingMemberId(null);
+      }
+    };
+
+    if (action === 'reject') {
+      showModal({
+        type: 'confirm',
+        title: 'Reject Request',
+        message: 'Are you sure you want to reject this registration request?',
+        confirmText: 'Reject',
+        onConfirm: performResolution
       });
-      setResolveMessage(action === 'approve' ? 'User approved successfully.' : 'User rejected.');
-      fetchMembers();
-      fetchPendingMembers();
-      setTimeout(() => setResolveMessage(''), 3000);
-    } catch (err: any) {
-      setResolveMessage(err.response?.data?.error || `Failed to ${action} user.`);
-    } finally {
-      setResolvingMemberId(null);
+    } else {
+      performResolution();
     }
   };
 

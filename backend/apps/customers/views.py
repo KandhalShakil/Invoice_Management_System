@@ -1,9 +1,11 @@
 from rest_framework import viewsets, permissions
+from rest_framework.response import Response
+from apps.core.mixins import ValidationMixin
 from apps.customers.models import Customer
 from apps.customers.serializers import CustomerSerializer
 from apps.organizations.permissions import HasRolePermission
 
-class CustomerViewSet(viewsets.ModelViewSet):
+class CustomerViewSet(ValidationMixin, viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
     permission_classes = [permissions.IsAuthenticated, HasRolePermission]
     

@@ -21,6 +21,12 @@ class DashboardStatsView(views.APIView):
         if not org_id:
             return Response({'error': 'Organization context is required.'}, status=status.HTTP_400_BAD_REQUEST)
             
+        from django.core.cache import cache
+        cache_key = f"dashboard_stats_{org_id}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return JsonResponse(cached_data)
+            
         # 1. Financial KPI aggregations
         # Scoped automatically to current tenant via TenantManager
         total_revenue = Invoice.objects.filter(status='paid').aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
@@ -75,7 +81,7 @@ class DashboardStatsView(views.APIView):
                 'taxable_amount': float(tax['taxable_amount'] or 0.0)
             })
 
-        return JsonResponse({
+        response_data = {
             'kpis': {
                 'total_revenue': float(total_revenue),
                 'monthly_revenue': float(monthly_revenue),
@@ -87,7 +93,9 @@ class DashboardStatsView(views.APIView):
             'invoice_counts': {item['status']: item['count'] for item in invoice_counts},
             'revenue_trend': revenue_trend,
             'tax_summary': tax_summary
-        })
+        }
+        cache.set(cache_key, response_data, 60 * 15)  # Cache for 15 minutes
+        return JsonResponse(response_data)
 
 
 class ReportsExportView(views.APIView):

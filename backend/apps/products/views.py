@@ -1,9 +1,11 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, filters, status
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Category, Product
 from .serializers import CategorySerializer, ProductSerializer
 from ..organizations.permissions import HasRolePermission
+from apps.core.mixins import ValidationMixin
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(ValidationMixin, viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticated, HasRolePermission]
     
@@ -29,7 +31,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
         serializer.save(updated_by=self.request.user)
 
 
-class ProductViewSet(viewsets.ModelViewSet):
+class ProductViewSet(ValidationMixin, viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticated, HasRolePermission]
     

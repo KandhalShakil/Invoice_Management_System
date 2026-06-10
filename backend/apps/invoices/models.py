@@ -23,11 +23,11 @@ class Invoice(TenantModel):
     )
 
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='invoices')
-    invoice_number = models.CharField(max_length=100)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    invoice_number = models.CharField(max_length=100, db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', db_index=True)
     
-    issue_date = models.DateField(default=timezone.now)
-    due_date = models.DateField()
+    issue_date = models.DateField(default=timezone.now, db_index=True)
+    due_date = models.DateField(db_index=True)
     
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     tax_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
@@ -67,6 +67,10 @@ class Invoice(TenantModel):
             self.invoice_number = f"INV-{year}-{counter:06d}"
             
         super().save(*args, **kwargs)
+        
+        # Invalidate dashboard cache
+        from django.core.cache import cache
+        cache.delete(f"dashboard_stats_{self.organization_id}")
 
 
 class InvoiceLineItem(BaseModel):
