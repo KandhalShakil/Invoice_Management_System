@@ -1,9 +1,12 @@
 import io
+import logging
 import re
 from PIL import Image
 import qrcode
-from pyzbar.pyzbar import decode
+
 from django.core.files.base import ContentFile
+
+logger = logging.getLogger(__name__)
 
 def is_valid_upi(upi_string):
     """
@@ -51,12 +54,13 @@ def decode_qr_image(image_file):
     """
     try:
         img = Image.open(image_file)
+        from pyzbar.pyzbar import decode  # type: ignore
         decoded_objects = decode(img)
         if decoded_objects:
             # Assuming the first QR code found is the relevant one
             return decoded_objects[0].data.decode('utf-8')
     except Exception as e:
-        print(f"QR Decode Error: {e}")
+        logger.error(f"QR Decode Error: {e}")
         pass
     return None
 
@@ -85,7 +89,7 @@ def generate_upi_qr(upi_id, merchant_name=None):
     
     # Save to memory buffer
     buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
+    img.save(buffer, kind="PNG")
     
     # Return as ContentFile
     filename = f"qr_{upi_id.replace('@', '_')}.png"
