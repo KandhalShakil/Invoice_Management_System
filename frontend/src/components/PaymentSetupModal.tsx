@@ -12,7 +12,7 @@ interface PaymentSetupModalProps {
 }
 
 const PaymentSetupModal: React.FC<PaymentSetupModalProps> = ({ isOpen, onClose, onSuccess, preventClose = false }) => {
-  const { activeOrg, organizations } = useAuth();
+  const { activeOrg } = useAuth();
   const [activeTab, setActiveTab] = useState<'upi' | 'qr'>('upi');
   const [upiId, setUpiId] = useState('');
   const [merchantName, setMerchantName] = useState('');

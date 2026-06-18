@@ -5,14 +5,14 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Plus, Search, ChevronRight, Check, X, 
-  Send, CreditCard, Sparkles, Upload, Trash2, FileText, Download 
+  Send, CreditCard, Trash2, FileText, Download 
 } from 'lucide-react';
 import { Invoice, Customer, Product, InvoiceLineItem } from '../types';
 import DatePicker from '../components/DatePicker';
 import PaymentSetupModal from '../components/PaymentSetupModal';
 
 const Invoices: React.FC = () => {
-  const { activeOrg, organizations } = useAuth();
+  const { activeOrg } = useAuth();
   
   // Tab controller
   const [activeTab, setActiveTab] = useState<'list' | 'new' | 'ocr' | 'ai'>('list');
@@ -65,13 +65,7 @@ const Invoices: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [workflowError, setWorkflowError] = useState('');
 
-  // 2. OCR and AI Prompt Form States
-  const [ocrFile, setOcrFile] = useState<File | null>(null);
-  const [ocrLoading, setOcrLoading] = useState(false);
-  
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiTargetCustomer, setAiTargetCustomer] = useState('');
+
 
   // 3. UI states & Toasts
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -393,101 +387,6 @@ const Invoices: React.FC = () => {
     }
   };
 
-  // AI features view trigger: File upload OCR
-  const handleOCRSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ocrFile) return;
-    setOcrLoading(true);
-    setIsSubmitting(true);
-    setFormError('');
-
-    const formData = new FormData();
-    formData.append('file', ocrFile);
-
-    try {
-      const res = await api.post('/ai/ocr/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      
-      // Parse OCR result and pre-fill form
-      const data = res.data;
-      if (data.items && data.items.length > 0) {
-        const matchingLines: InvoiceLineItem[] = data.items.map((ocrItem: any) => {
-          // Look for matching product SKU/name or assign fallback
-          const matchingProd = products.find(p => p.name.toLowerCase().includes(ocrItem.name.toLowerCase())) || products[0];
-          return {
-            product: matchingProd ? matchingProd.id : '',
-            product_name: matchingProd ? matchingProd.name : '',
-            description: matchingProd ? (matchingProd.description || '') : ocrItem.name,
-            quantity: ocrItem.quantity,
-            unit_price: matchingProd ? matchingProd.price : ocrItem.unit_price,
-            tax_rate: matchingProd ? matchingProd.tax_rate : ocrItem.tax_rate
-          };
-        });
-        setLineItems(matchingLines);
-        setNotes(`Extracted OCR fields from invoice file ${ocrFile.name}. Vendor: ${data.vendor_name}`);
-        
-        // Redirect to creator tab
-        setActiveTab('new');
-        showToast('OCR layout scan complete!', 'success');
-      } else {
-        setFormError('OCR extraction returned no line items. Please try a clearer image or PDF.');
-        showToast('OCR returned empty layout.', 'error');
-      }
-    } catch (e: any) {
-      const msg = e.response?.data?.error || 'Failed to parse document. Ensure the file is a valid invoice image or PDF.';
-      setFormError(msg);
-      showToast(msg, 'error');
-    } finally {
-      setOcrLoading(false);
-      setIsSubmitting(false);
-    }
-  };
-
-  // AI features view trigger: NLP prompt builder
-  const handleAISmartDraft = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!aiPrompt || !aiTargetCustomer) return;
-    setAiLoading(true);
-    setIsSubmitting(true);
-    setFormError('');
-
-    try {
-      const res = await api.post('/ai/smart-draft/', {
-        prompt: aiPrompt,
-        customer_id: aiTargetCustomer
-      });
-      
-      const data = res.data;
-      setCustomer(data.customer);
-      setTerms(data.terms || '');
-      setNotes(`AI Generated Draft for prompt: "${aiPrompt}"`);
-      
-      const mappedLines = data.line_items.map((li: any) => {
-        const matchingProd = products.find(p => p.id === li.product) || products[0];
-        return {
-          product: matchingProd ? matchingProd.id : '',
-          product_name: matchingProd ? matchingProd.name : '',
-          description: matchingProd ? (matchingProd.description || '') : li.description,
-          quantity: li.quantity,
-          unit_price: matchingProd ? matchingProd.price : li.unit_price,
-          tax_rate: matchingProd ? matchingProd.tax_rate : li.tax_rate
-        };
-      });
-      setLineItems(mappedLines);
-      
-      // Redirect to builder tab with pre-filled data
-      setActiveTab('new');
-      showToast('AI Smart Draft compiled!', 'success');
-    } catch (e: any) {
-      const msg = e.response?.data?.error || 'Failed to compile AI smart draft. Please rephrase your prompt.';
-      setFormError(msg);
-      showToast(msg, 'error');
-    } finally {
-      setAiLoading(false);
-      setIsSubmitting(false);
-    }
-  };
 
   // Invoices list uses server-side search and filtering directly
   const filteredInvoices = invoices;
@@ -1155,7 +1054,7 @@ const Invoices: React.FC = () => {
       <PaymentSetupModal
         isOpen={showPaymentSetup}
         onClose={() => setShowPaymentSetup(false)}
-        onSuccess={(updatedOrg) => {
+        onSuccess={() => {
           // Trigger SWR revalidation or reload window to pick up new org context
           window.location.reload();
         }}
