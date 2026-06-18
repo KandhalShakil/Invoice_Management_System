@@ -91,6 +91,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install system dependencies (zbar)
+        run: sudo apt-get update && sudo apt-get install -y libzbar0
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
